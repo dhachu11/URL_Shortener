@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Analytics — ShortURL</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Pacifico&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #8B3DFF;
+      --primary-light: #F3EBFF;
+      --bg-color: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    nav {
+      background: white;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Pacifico', cursive;
+      font-size: 1.5rem;
+      color: #00C4CC; 
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .header .subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header .subtitle a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .header .subtitle a:hover {
+      text-decoration: underline;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .stat-value.small {
+      font-size: 1.125rem;
+      word-break: break-all;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    .country-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .country-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .country-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      font-weight: 600;
+      color: var(--text-muted);
+      background: #F8FAFC;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 4rem;
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .error-msg {
+      text-align: center;
+      padding: 4rem;
+      color: #E53E3E;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="logo">ShortURL</a>
+  </nav>
+
+  <div class="container">
+    <div id="loading" class="loading">Gathering analytics data...</div>
+    <div id="error" class="error-msg"></div>
+
+    <div id="dashboard" style="display: none;">
+      <div class="header">
+        <div>
+          <h1>Link Performance</h1>
+          <div class="subtitle">
+            Analyzing traffic for <a id="short-link-display" href="#" target="_blank"></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-title">Total Clicks</div>
+          <div class="stat-value" id="val-clicks">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Created At</div>
+          <div class="stat-value small" id="val-created">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Expires At</div>
+          <div class="stat-value small" id="val-expires">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Destination URL</div>
+          <div class="stat-value small" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="val-original">-</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="card">
+          <h2 class="card-title">Clicks over last 30 days</h2>
+          <canvas id="clicksChart" height="100"></canvas>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Top Locations</h2>
+          <div class="country-list" id="country-list">
+            <!-- Dynamic Content -->
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Recent Clicks</h2>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Location</th>
+                <th>Referrer</th>
+              </tr>
+            </thead>
+            <tbody id="recent-clicks-body">
+              <!-- Dynamic Content -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadAnalytics() {
+      // Extract code from the URL path: /analytics/XYZ
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const code = pathParts[pathParts.length - 1];
+
+      if (!code) {
+        showError('No short code provided in URL.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/analytics/api/${code}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || 'Failed to load analytics.');
+          return;
+        }
+
+        renderDashboard(data);
+      } catch (err) {
+        showError('A network error occurred. Try again later.');
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      const errEl = document.getElementById('error');
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+    }
+
+    function renderDashboard(data) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+
+      // Header info
+      const fullUrl = `${window.location.origin}/${data.code}`;
+      const linkEl = document.getElementById('short-link-display');
+      linkEl.textContent = fullUrl;
+      linkEl.href = fullUrl;
+
+      // Stats
+      document.getElementById('val-clicks').textContent = data.totalClicks;
+      document.getElementById('val-original').textContent = data.originalUrl;
+      document.getElementById('val-original').title = data.originalUrl;
+      
+      const createdDate = new Date(data.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      document.getElementById('val-created').textContent = createdDate;
+      
+      document.getElementById('val-expires').textContent = data.expiresAt === 'Never' ? 'Never' : new Date(data.expiresAt).toLocaleDateString();
+
+      // Chart
+      renderChart(data.clicksByDay);
+
+      // Countries
+      renderCountries(data.clicksByCountry, data.totalClicks);
+
+      // Recent Clicks
+      renderRecent(data.recentClicks);
+    }
+
+    function renderChart(daysData) {
+      const ctx = document.getElementById('clicksChart').getContext('2d');
+      
+      // If no data, provide an empty array to show empty chart
+      const labels = daysData.length ? daysData.map(d => new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })) : ['No Data'];
+      const values = daysData.length ? daysData.map(d => parseInt(d.count)) : [0];
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Clicks',
+            data: values,
+            backgroundColor: '#8B3DFF',
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderCountries(countries, totalClicks) {
+      const container = document.getElementById('country-list');
+      if (!countries || countries.length === 0) {
+        container.innerHTML = '<div class="empty-state">No location data yet</div>';
+        return;
+      }
+
+      // Max value for progress bar calculation
+      const maxCount = Math.max(...countries.map(c => parseInt(c.count)));
+
+      container.innerHTML = countries.slice(0, 5).map(c => {
+        const count = parseInt(c.count);
+        const percentage = Math.round((count / maxCount) * 100);
+        return `
+          <div class="country-item">
+            <div class="country-header">
+              <span>${c.country === 'Local' ? 'Unknown/Local' : c.country}</span>
+              <span>${count}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderRecent(clicks) {
+      const tbody = document.getElementById('recent-clicks-body');
+      if (!clicks || clicks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No recent clicks recorded.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = clicks.map(c => {
+        const time = new Date(c.clicked_at).toLocaleString();
+        const location = c.country === 'Local' ? 'Unknown' : `${c.city}, ${c.country}`;
+        const ref = c.referer ? `<span class="badge">${new URL(c.referer).hostname}</span>` : '<span class="text-muted">Direct</span>';
+        return `
+          <tr>
+            <td>${time}</td>
+            <td>${location}</td>
+            <td>${ref}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Initialize
+    loadAnalytics();
+  </script>
+</body>
+</html>
