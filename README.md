@@ -2,7 +2,7 @@
 
 A high-performance, modern URL shortener built with **Node.js**, **PostgreSQL**, and **Redis**. ShortURL allows users to shorten long URLs, create custom alias codes, and track detailed click analytics including geolocation and referrer data.
 
-![ShortURL Interface Demo](public/model.png)
+![ShortURL Interface Demo]
 
 ## 🚀 Features
 
